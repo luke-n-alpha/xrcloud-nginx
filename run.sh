@@ -1,11 +1,5 @@
 #!/bin/bash
 
-# .env 파일이 있으면 환경 변수 로드
-if [ -f .env ]; then
-  echo "Loading environment variables from .env file..."
-  export $(cat .env | sed 's/#.*//g' | xargs)
-fi
-
 # 실행 모드 확인
 MODE=$1
 HOME_DIR=$(pwd)
@@ -17,49 +11,31 @@ if [ -z "$MODE" ]; then
     exit 1
 fi
 
-if [ "$MODE" == "prod" ]; then
-    echo "Running in production mode..."
-    SSL_DIR="$HOME_DIR/ssl"
-    NGINX_CONF="$HOME_DIR/nginx.conf"
-    # STORAGE_PATH 변수는 .env 파일에서 가져옵니다.
-else 
-    echo "Running in development mode..."
-    SSL_DIR="$HOME_DIR/ssl.dev"
-    NGINX_CONF="$HOME_DIR/nginx.dev.conf"
-    # STORAGE_PATH 변수는 .env 파일에서 가져옵니다.    
+# 환경 변수 파일 로드
+ENV_FILE="$HOME_DIR/.env.$MODE"
+if [ ! -f "$ENV_FILE" ]; then
+    echo "Error: Environment file $ENV_FILE does not exist."
+    exit 1
 fi
 
-# 필수 환경 변수 확인
-if [ -z "$STORAGE_PATH" ] || [ -z "$CERT_DOMAIN" ]; then
-    echo "Error: STORAGE_PATH and CERT_DOMAIN must be set in the .env file."
-    echo "Please copy .env.sample to .env and fill in the required values."
+# 환경 변수 로드
+source "$ENV_FILE"
+
+if [ "$MODE" == "prod" ]; then
+    echo "Running in production mode..."
+else 
+    echo "Running in development mode..."
+fi
+
+# 필수 환경 변수 체크
+if [ -z "$SSL_DIR" ] || [ -z "$NGINX_CONF" ] || [ -z "$STORAGE_PATH" ]; then
+    echo "Error: Required environment variables are not set."
+    echo "Please check your $ENV_FILE file."
     exit 1
 fi
 
 # 기존 nginx 서비스 중지
 sudo systemctl stop nginx
-
-# 인증서 경로 설정
-CERT_BASE_PATH="/etc/letsencrypt/live/${CERT_DOMAIN}"
-
-# 인증서 복사
-sudo cp -L "${CERT_BASE_PATH}/fullchain.pem" "${HOME_DIR}/ssl/frontend/"
-sudo cp -L "${CERT_BASE_PATH}/privkey.pem" "${HOME_DIR}/ssl/frontend/"
-sudo cp -L "${CERT_BASE_PATH}/fullchain.pem" "${HOME_DIR}/ssl/backend/"
-sudo cp -L "${CERT_BASE_PATH}/privkey.pem" "${HOME_DIR}/ssl/backend/"
-
-# Hubs 관련 디렉터리로 인증서 복사 (프로젝트 루트 경로를 기준으로)
-HUBS_DIR="${HOME_DIR}/../hubs-all-in-one"
-sudo cp -L "${CERT_BASE_PATH}/fullchain.pem" "${HUBS_DIR}/certs/cert.pem"
-sudo cp -L "${CERT_BASE_PATH}/privkey.pem" "${HUBS_DIR}/certs/key.pem"
-sudo cp -L "${CERT_BASE_PATH}/fullchain.pem" "${HUBS_DIR}/dialog/certs/cert.pem"
-sudo cp -L "${CERT_BASE_PATH}/privkey.pem" "${HUBS_DIR}/dialog/certs/key.pem"
-sudo cp -L "${CERT_BASE_PATH}/fullchain.pem" "${HUBS_DIR}/hubs/certs/cert.pem"
-sudo cp -L "${CERT_BASE_PATH}/privkey.pem" "${HUBS_DIR}/hubs/certs/key.pem"
-sudo cp -L "${CERT_BASE_PATH}/fullchain.pem" "${HUBS_DIR}/reticulum/certs/cert.pem"
-sudo cp -L "${CERT_BASE_PATH}/privkey.pem" "${HUBS_DIR}/reticulum/certs/key.pem"
-
-
 
 # 기존 도커 컨테이너 중지 및 삭제
 sudo docker stop xrcloud-nginx
@@ -74,6 +50,5 @@ sudo docker run -d --name xrcloud-nginx --restart always --network xrcloud \
     -v "$SSL_DIR:/etc/ssl" \
     -v "$NGINX_CONF:/etc/nginx/nginx.conf" \
     -v "$STORAGE_PATH:/app/xrcloud-backend/storage" \
-    -v "/var/www/certbot:/var/www/certbot" \
     -v /app/xrcloud-nginx/logs:/var/log/nginx \
     xrcloud-nginx:latest
