@@ -54,6 +54,6 @@ sudo docker run -d --name xrcloud-nginx --restart always --network xrcloud \
     -p 80:80 -p 443:443 \
     -v "$(pwd)/ssl:/etc/ssl" \
     -v "$NGINX_CONF:/etc/nginx/nginx.conf" \
-    -v "$STORAGE_PATH:/app/xrcloud-backend/storage" \
+    -v "/mnt/xrcloud-prod-ko/xrcloud/storage:/app/xrcloud-backend/storage" \
     -v /app/xrcloud-nginx/logs:/var/log/nginx \
     xrcloud-nginx:latest
