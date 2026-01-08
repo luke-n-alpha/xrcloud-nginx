@@ -4,3 +4,6 @@
 *.crt
 *.key
 *.jwk.json
+
+# Environment variables
+.env
