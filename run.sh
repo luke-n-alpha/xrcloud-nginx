@@ -27,6 +27,21 @@ fi
 
 # 기존 nginx 서비스 중지
 sudo systemctl stop nginx
+sudo cp -L /etc/letsencrypt/live/xrcloud.app/fullchain.pem /home/belivvr/xrcloud/xrcloud-nginx/ssl/frontend/
+sudo cp -L /etc/letsencrypt/live/xrcloud.app/privkey.pem /home/belivvr/xrcloud/xrcloud-nginx/ssl/frontend/
+sudo cp -L /etc/letsencrypt/live/xrcloud.app/fullchain.pem /home/belivvr/xrcloud/xrcloud-nginx/ssl/backend/
+sudo cp -L /etc/letsencrypt/live/xrcloud.app/privkey.pem /home/belivvr/xrcloud/xrcloud-nginx/ssl/backend/
+
+sudo cp -L /etc/letsencrypt/live/xrcloud.app/fullchain.pem /home/belivvr/xrcloud/hubs-all-in-one/certs/cert.pem
+sudo cp -L /etc/letsencrypt/live/xrcloud.app/privkey.pem /home/belivvr/xrcloud/hubs-all-in-one/certs/key.pem
+sudo cp -L /etc/letsencrypt/live/xrcloud.app/fullchain.pem /home/belivvr/xrcloud/hubs-all-in-one/dialog/certs/cert.pem
+sudo cp -L /etc/letsencrypt/live/xrcloud.app/privkey.pem /home/belivvr/xrcloud/hubs-all-in-one/dialog/certs/key.pem
+sudo cp -L /etc/letsencrypt/live/xrcloud.app/fullchain.pem /home/belivvr/xrcloud/hubs-all-in-one/hubs/certs/cert.pem
+sudo cp -L /etc/letsencrypt/live/xrcloud.app/privkey.pem /home/belivvr/xrcloud/hubs-all-in-one/hubs/certs/key.pem
+sudo cp -L /etc/letsencrypt/live/xrcloud.app/fullchain.pem /home/belivvr/xrcloud/hubs-all-in-one/reticulum/certs/cert.pem
+sudo cp -L /etc/letsencrypt/live/xrcloud.app/privkey.pem /home/belivvr/xrcloud/hubs-all-in-one/reticulum/certs/key.pem
+
+
 
 # 기존 도커 컨테이너 중지 및 삭제
 sudo docker stop xrcloud-nginx
@@ -41,5 +56,6 @@ sudo docker run -d --name xrcloud-nginx --restart always --network xrcloud \
     -v "$SSL_DIR:/etc/ssl" \
     -v "$NGINX_CONF:/etc/nginx/nginx.conf" \
     -v "$STORAGE_PATH:/app/xrcloud-backend/storage" \
+    -v "/var/www/certbot:/var/www/certbot" \
     -v /app/xrcloud-nginx/logs:/var/log/nginx \
     xrcloud-nginx:latest
