@@ -41,13 +41,18 @@ sudo systemctl stop nginx
 sudo docker stop xrcloud-nginx
 sudo docker rm xrcloud-nginx
 
+# SSL 인증서 복사 (심볼릭 링크의 원본 파일 복사)
+mkdir -p ssl
+sudo cp -L /etc/letsencrypt/live/xrcloud.app/fullchain.pem $HOME_DIR/ssl/
+sudo cp -L /etc/letsencrypt/live/xrcloud.app/privkey.pem $HOME_DIR/ssl/
+
 # 도커 이미지 빌드
 sudo docker build -t xrcloud-nginx .
 
 # 도커 컨테이너 실행
 sudo docker run -d --name xrcloud-nginx --restart always --network xrcloud \
     -p 80:80 -p 443:443 \
-    -v "$SSL_DIR:/etc/ssl" \
+    -v "$(pwd)/ssl:/etc/ssl" \
     -v "$NGINX_CONF:/etc/nginx/nginx.conf" \
     -v "$STORAGE_PATH:/app/xrcloud-backend/storage" \
     -v /app/xrcloud-nginx/logs:/var/log/nginx \
